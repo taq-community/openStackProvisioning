@@ -1,0 +1,108 @@
+---
+- name: Setup Shiny server with required tools and dependencies
+  hosts: shiny_server
+  become: yes
+
+  vars:
+    flash_version: "2.2.00"
+    vsearch_version: "2.30.0"
+    r_packages:
+      - shiny
+      - shinydashboard
+      - DT
+      - dplyr
+      - readr
+      - remotes
+      - pkgload
+      - config
+      - golem
+      - shinyWidgets
+    python_packages:
+      - biopython
+      - pandas
+      - numpy
+
+  tasks:
+
+    - name: Install system dependencies
+      apt:
+        name:
+          - libcurl4-openssl-dev
+          - libssl-dev
+          - libxml2-dev
+          - libgit2-dev
+          - libglpk-dev
+          - libharfbuzz-dev
+          - libfribidi-dev
+          - curl
+          - git
+          - unzip
+          - parallel
+          - python3
+          - python3-pip
+          - openjdk-11-jre-headless
+          - build-essential
+          - wget
+          - less
+          - r-base
+        update_cache: yes
+
+    - name: Install FLASH
+      shell: |
+        wget https://github.com/dstreett/FLASH2/archive/refs/tags/{{ flash_version }}.tar.gz
+        tar -xzf {{ flash_version }}.tar.gz
+        cd FLASH2-{{ flash_version }}
+        make
+        cp flash /usr/local/bin/
+        cd ..
+        rm -rf FLASH2-{{ flash_version }} {{ flash_version }}.tar.gz
+      args:
+        creates: /usr/local/bin/flash
+
+    - name: Install VSEARCH
+      shell: |
+        wget https://github.com/torognes/vsearch/releases/download/v{{ vsearch_version }}/vsearch-{{ vsearch_version }}-linux-x86_64.tar.gz
+        tar -xzf vsearch-{{ vsearch_version }}-linux-x86_64.tar.gz
+        cp vsearch-{{ vsearch_version }}-linux-x86_64/bin/vsearch /usr/local/bin/
+        rm -rf vsearch-{{ vsearch_version }}-linux-x86_64*
+      args:
+        creates: /usr/local/bin/vsearch
+
+    - name: Install R packages with Rscript
+      shell: |
+        Rscript -e "if (!require('{{ item }}')) install.packages('{{ item }}', repos='http://cran.rstudio.com/')"
+      loop: "{{ r_packages }}"
+
+    - name: Install Python packages
+      pip:
+        name: "{{ item }}"
+        extra_args: --break-system-packages --no-cache-dir
+        executable: pip3
+      loop: "{{ python_packages }}"
+
+    - name: Remove existing demo Shiny apps
+      file:
+        path: /srv/shiny-server
+        state: absent
+
+    - name: Clone barqueShinyApp GitHub repo with submodule
+      git:
+        repo: https://github.com/taq-community/barqueShinyApp.git
+        dest: /srv/shiny-server/barqueShinyApp
+        version: HEAD
+        force: yes
+        recursive: yes
+        update: yes
+
+    - name: Set permissions for Shiny app
+      file:
+        path: /srv/shiny-server/barqueShinyApp
+        owner: shiny
+        group: shiny
+        recurse: yes
+
+    - name: Ensure Shiny Server is started
+      systemd:
+        name: shiny-server
+        state: started
+        enabled: true
