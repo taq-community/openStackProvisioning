@@ -1,3 +1,3 @@
 output "ssh_command" {
-  value = "ssh sviss@${openstack_networking_floatingip_v2.fip.address}"
+  value = "ssh user@${openstack_networking_floatingip.fip.address}"
 }

@@ -29,3 +29,8 @@ terraform apply \
   -var os_password=$OS_PASSWORD \
   -var os_domain=$OS_USER_DOMAIN_NAME
 ```
+
+### Security group
+
+SSH connection secured by private ssh key with no CIDR strategy.
+See `ssh_cidr` variable.

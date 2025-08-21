@@ -23,16 +23,6 @@ variable "os_domain" {
   type = string
 }
 
-variable "network_name" {
-  type    = string
-  default = "private"
-}
-
-variable "external_network" {
-  type    = string
-  default = "public"
-}
-
 variable "keypair_name" {
   type    = string
   default = "id_compute_cloud"
