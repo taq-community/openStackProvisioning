@@ -58,8 +58,7 @@ Terraform will provision the VM and pass the **cloud-init** that:
 
 ## 4) Security Group
 
-- **SSH** is restricted to key-based auth; no wide-open CIDR.
-- Configure the allowed source via Terraform variable **`ssh_cidr`** as needed.
+- **SSH** is restricted to key-based auth with CIDR lock
 
 ---
 

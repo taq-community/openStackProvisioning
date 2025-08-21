@@ -46,5 +46,5 @@ variable "secgroup_name" {
 # Restrict as needed (0.0.0.0/0 for tests)
 variable "ssh_cidr" {
   type    = string
-  default = "0.0.0.0/0"
+  default = "184.162.122.126"
 }
