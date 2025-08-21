@@ -3,9 +3,11 @@ package_update: true
 packages:
   - docker.io
   - jq
-  - default-jre     # ShinyProxy requires Java (Debian/Ubuntu package pulls this in, but this keeps it explicit)
+  - default-jre
   - ufw
   - nginx
+  - certbot
+  - python3-certbot-nginx
 
 users:
   - name: sviss
@@ -45,11 +47,14 @@ write_files:
         }
       }
 
+
   # Main ShinyProxy config (installed .deb reads /etc/shinyproxy/application.yml)
   - path: /etc/shinyproxy/application_deploy.yml
     permissions: "0644"
     owner: root:root
     content: |
+      server:
+        forward-headers-strategy: native
       proxy:
         title: Control app center
         logo-url: https://www.openanalytics.eu/shinyproxy/logo.png
@@ -83,7 +88,7 @@ write_files:
       logging:
         file:
           name: /var/log/shinyproxy/shinyproxy.log
-
+      
 logging:
   file:
     name: /var/log/shinyproxy/shinyproxy.log
@@ -116,3 +121,14 @@ runcmd:
   - rm -f /etc/nginx/sites-enabled/default
   - nginx -t && systemctl reload nginx
   - systemctl restart shinyproxy
+  
+  # Firewall
+  - sudo ufw allow 22/tcp
+  - sudo ufw allow 80/tcp
+  - sudo ufw allow 443/tcp
+  - sudo ufw enable
+  
+  # SSL certificate
+  - sudo certbot --nginx -d cloud.taq.info -m steve.vissault@taq.info --agree-tos --no-eff-email -n
+  - systemctl restart nginx
+  
