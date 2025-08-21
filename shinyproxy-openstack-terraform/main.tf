@@ -60,21 +60,3 @@ resource "openstack_compute_instance_v2" "vm" {
 
   user_data = file("${path.module}/cloud-init.yaml")
 }
-
-# IP publique
-resource "openstack_networking_floatingip_v2" "fip" {
-  pool = data.openstack_networking_network_v2.external.name
-}
-
-resource "openstack_networking_floatingip_associate_v2" "fip_assoc" {
-  floating_ip = openstack_networking_floatingip_v2.fip.address
-  port_id     = openstack_compute_instance_v2.vm.network[0].port
-}
-
-output "public_ip" {
-  value = openstack_networking_floatingip_v2.fip.address
-}
-
-output "shinyproxy_url" {
-  value = "http://${openstack_networking_floatingip_v2.fip.address}"
-}

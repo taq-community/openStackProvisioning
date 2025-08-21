@@ -46,6 +46,8 @@ terraform apply \
   -var os_username=$OS_USERNAME \
   -var os_password=$OS_PASSWORD \
   -var os_domain=$OS_USER_DOMAIN_NAME
+
+# Associate manually the floating ip with shinyproxy-1 server
 ```
 
 Terraform will provision the VM and pass the **cloud-init** that:
