@@ -1,0 +1,3 @@
+def-langloiv-prod-openrc.sh
+.terraform*
+*.tfstate.*
