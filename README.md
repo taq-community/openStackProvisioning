@@ -1,7 +1,6 @@
 # SOP – Deploying ShinyProxy on Arbutus with Terraform
 
-## Project Folder
-`shinyproxy-openstack-terraform`
+## Project Folder `shinyproxy-openstack-terraform`
 
 This folder contains the Terraform code to provision a VM on **Arbutus (OpenStack)** and deploy **ShinyProxy** with the **BARQUE Shiny App** behind **NGINX**.
 

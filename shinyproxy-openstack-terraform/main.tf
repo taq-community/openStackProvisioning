@@ -49,8 +49,8 @@ resource "openstack_compute_keypair_v2" "kp" {
 
 resource "openstack_compute_instance_v2" "vm" {
   name            = var.server_name
-  flavor_name     = "p8-12gb"
-  image_id        = "241de10b-becc-4d4d-a622-61695e5cb94f"
+  flavor_name     = var.flavor_name
+  image_id        = var.image_id
   key_pair        = openstack_compute_keypair_v2.kp.name
   security_groups = [openstack_networking_secgroup_v2.sg.name]
 
@@ -58,5 +58,22 @@ resource "openstack_compute_instance_v2" "vm" {
     uuid = data.openstack_networking_network_v2.internal.id
   }
 
-  user_data = file("${path.module}/cloud-init.yaml")
+  user_data = templatefile("${path.module}/cloud-init.yaml", {
+    shinyproxy_user1     = var.shinyproxy_user1
+    shinyproxy_password1 = var.shinyproxy_password1
+    shinyproxy_user2     = var.shinyproxy_user2
+    shinyproxy_password2 = var.shinyproxy_password2
+    shinyproxy_user3     = var.shinyproxy_user3
+    shinyproxy_password3 = var.shinyproxy_password3
+    ssh_public_key       = file(var.public_key_path)
+  })
+}
+
+data "openstack_networking_floatingip_v2" "existing_floating_ip" {
+  address = var.existing_floating_ip
+}
+
+resource "openstack_compute_floatingip_associate_v2" "floating_ip_association" {
+  floating_ip = data.openstack_networking_floatingip_v2.existing_floating_ip.address
+  instance_id = openstack_compute_instance_v2.vm.id
 }

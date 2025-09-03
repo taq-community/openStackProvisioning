@@ -15,7 +15,7 @@ users:
     shell: /bin/bash
     sudo: ["ALL=(ALL) NOPASSWD:ALL"]
     ssh_authorized_keys:
-      - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHRbsFCqTfi53WzSID/lm1SydwZ1fIFsS7cZh0gpZ6Dp steve.vissault@inrs.ca
+      - ${ssh_public_key}
 
 write_files:
   - path: /etc/nginx/sites-available/shinyproxy
@@ -71,14 +71,14 @@ write_files:
         container-log-path: /var/log/shinyproxy/container-logs
         # Example: 'simple' authentication configuration
         users:
-          - name: tuan
-            password: 2bchanged
+          - name: ${shinyproxy_user1}
+            password: ${shinyproxy_password1}
             groups: scientists
-          - name: julie
-            password: 2bchanged
+          - name: ${shinyproxy_user2}
+            password: ${shinyproxy_password2}
             groups: scientists
-          - name: steve
-            password: 2bchanged
+          - name: ${shinyproxy_user3}
+            password: ${shinyproxy_password3}
             groups: [ scientists, admin ]
         docker:
           port-range-start: 20000
@@ -190,12 +190,12 @@ write_files:
                   <img src="https://github.com/taq-community/logo/blob/main/logo_color_high_res.png?raw=true" alt="Logo" class="login-logo">
                   
                   <!-- Error message (if any) -->
-                  <div th:if="${param.error}" class="alert alert-danger" role="alert">
+                  <div th:if="$${param.error}" class="alert alert-danger" role="alert">
                       <small>Invalid username or password</small>
                   </div>
                   
                   <!-- Logout message (if any) -->
-                  <div th:if="${param.logout}" class="alert alert-success" role="alert">
+                  <div th:if="$${param.logout}" class="alert alert-success" role="alert">
                       <small>You have been logged out</small>
                   </div>
                   
