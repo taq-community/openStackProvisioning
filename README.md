@@ -1,43 +1,56 @@
-# SOP – Deploying ShinyProxy on Arbutus with Terraform
+# ShinyProxy Deployment on Arbutus OpenStack
 
-## Project Folder `shinyproxy-openstack-terraform`
+This repository contains Terraform configurations and documentation for deploying ShinyProxy on the Arbutus OpenStack cloud platform, providing a scalable web application hosting environment for R Shiny applications.
 
-This folder contains the Terraform code to provision a VM on **Arbutus (OpenStack)** and deploy **ShinyProxy** with the **BARQUE Shiny App** behind **NGINX**.
+## Overview
 
----
+The `shinyproxy-openstack-terraform` directory contains infrastructure-as-code for provisioning and configuring:
+- OpenStack VM with automated setup via cloud-init
+- ShinyProxy application server with Docker backend
+- Nginx reverse proxy with SSL termination
+- BARQUE Shiny application deployment
 
-## 1) Base Setup (via cloud-init)
+## Architecture Components
 
-- Installs: **Docker**, **default-jre** (for ShinyProxy), **jq**, **ufw**, **nginx**.  
-- Creates user **`sviss`** (groups: `sudo`, `docker`) and configures SSH key-based access.
+### Base Infrastructure Setup
+- **Compute**: Ubuntu VM with 8 vCPUs and 12GB RAM (`p8-12gb` flavor)
+- **Networking**: Internal and public network configuration with floating IP
+- **Security**: SSH key-based authentication and firewall rules
+- **Storage**: Automated log management and application data persistence
 
----
+### Application Stack
+- **Docker Engine**: Container runtime for Shiny applications
+- **Java Runtime**: Required for ShinyProxy operation
+- **System Tools**: `jq`, `ufw` for configuration and security management
+- **User Management**: `sviss` user with Docker and sudo privileges
 
-## 2) Configuration Files (written on the VM)
+### Service Configuration
 
-- **NGINX reverse proxy**  
-  `/etc/nginx/sites-available/shinyproxy`  
-  - Forwards `http://cloud.taq.info:443` → `http://127.0.0.1:8080` (ShinyProxy)
+**Nginx Reverse Proxy** (`/etc/nginx/sites-available/shinyproxy`)
+- SSL termination for `cloud.taq.info`
+- Request forwarding to ShinyProxy on port 8080
+- 100MB client body size limit for file uploads
 
-- **ShinyProxy configuration**  
-  `/etc/shinyproxy/application_deploy.yml` → moved to `/etc/shinyproxy/application.yml`  
-  - Auth: `simple` (users: `tuan`, `julie`, `steve`; `steve` in `admin`)  
-  - App spec: **BARQUE** (`container-image: barque-app:prod`)  
-  - Logging, port `8080`, UI options
+**ShinyProxy Configuration** (`/etc/shinyproxy/application.yml`)
+- Simple authentication with three users: `tuan`, `julie`, `steve` (admin)
+- BARQUE application container specification
+- Logging configuration and UI customization
+- Docker port range allocation starting from 20000
 
----
+## Deployment Instructions
 
-## 3) Deployment Procedure
-
-From your workstation:
+### Prerequisites
+Ensure you have OpenStack credentials loaded in your environment:
 
 ```bash
 cd openStackProvisioning
-
-# Load OpenStack credentials
 source def-langloiv-prod-openrc.sh
+```
 
-# Launch infrastructure
+### Infrastructure Provisioning
+Deploy the complete stack using Terraform:
+
+```bash
 terraform apply \
   -var os_auth_url=$OS_AUTH_URL \
   -var os_region=$OS_REGION_NAME \
@@ -45,63 +58,81 @@ terraform apply \
   -var os_username=$OS_USERNAME \
   -var os_password=$OS_PASSWORD \
   -var os_domain=$OS_USER_DOMAIN_NAME
-
-# Associate manually the floating ip with shinyproxy-1 server
 ```
 
-Terraform will provision the VM and pass the **cloud-init** that:
-1. Installs deps and services
-2. Installs ShinyProxy and config
-3. Clones `barqueShinyApp` and builds `barque-app:prod`
-4. Enables NGINX site and reloads services
+### Automated Setup Process
+The cloud-init script automatically handles:
+1. **Package Installation**: Docker, Java, Nginx, Certbot, system utilities
+2. **User Configuration**: SSH keys, group membership, permissions
+3. **Service Setup**: ShinyProxy installation and configuration
+4. **Application Deployment**: BARQUE app container build from GitHub
+5. **SSL Certificate**: Let's Encrypt certificate provisioning
+6. **Network Security**: Firewall configuration and service enablement
 
----
+## Security Configuration
 
-## 4) Security Group
+**Network Security**
+- SSH access restricted by IP CIDR with key-based authentication
+- HTTP (80) and HTTPS (443) ports open for web access
+- Internal communication secured within OpenStack network
 
-- **SSH** is restricted to key-based auth with CIDR lock
+**Application Security**
+- User authentication required for ShinyProxy access
+- Admin-level permissions for administrative functions
+- Container isolation for application execution
 
----
+## Verification and Testing
 
-## 5) Post‑Deploy Checks
-
-On the VM:
+### System Health Checks
+Execute these commands on the deployed VM:
 
 ```bash
-# Docker
+# Verify Docker service
 sudo systemctl status docker
 
-# ShinyProxy
+# Check ShinyProxy status and logs
 sudo systemctl status shinyproxy
 sudo journalctl -u shinyproxy -n 100 --no-pager
 
-# NGINX
+# Validate Nginx configuration
 sudo nginx -t
 sudo systemctl status nginx
 
-# Open ports (expect 80 listening)
+# Confirm port availability
 sudo ss -ltnp | grep -E ':80|:8080'
 ```
 
-From your browser:
+### Application Access
+1. Navigate to **https://cloud.taq.info**
+2. Authenticate using configured credentials (e.g., username: `steve`)
+3. Verify BARQUE application availability and functionality
 
-- Visit **http://cloud.taq.info**.  
-- Log in with one of the configured users (e.g., `steve`).
+## Expected Outcomes
 
----
+Upon successful deployment:
+- **ShinyProxy Portal**: Accessible at `https://cloud.taq.info`
+- **BARQUE Application**: Available through ShinyProxy interface
+- **SSL Security**: Automated certificate management via Let's Encrypt
+- **Container Management**: Docker-based application isolation and scaling
 
-## 6) Expected Result
+## Troubleshooting Guide
 
-- **ShinyProxy** accessible at **`http://cloud.taq.info`**  
-- **BARQUE** app visible and launchable from ShinyProxy
+**ShinyProxy Issues**
+- Check application logs: `/var/log/shinyproxy/shinyproxy.log`
+- Verify Java installation and port 8080 availability
+- Restart service: `sudo systemctl restart shinyproxy`
 
----
+**Nginx Configuration Problems**
+- Test configuration: `sudo nginx -t`
+- Verify site enablement: check `/etc/nginx/sites-enabled/shinyproxy` symlink
+- Reload configuration: `sudo systemctl reload nginx`
 
-## 7) Troubleshooting (quick tips)
+**Application Deployment Issues**
+- Confirm Docker image existence: `docker images | grep barque-app`
+- Validate ShinyProxy configuration in `application.yml`
+- Check container logs for runtime errors
 
-- **ShinyProxy not up**: check `/var/log/shinyproxy/shinyproxy.log`, ensure Java installed and port 8080 free.  
-- **NGINX 502/404**: `nginx -t`, verify symlink `/etc/nginx/sites-enabled/shinyproxy`, then `sudo systemctl reload nginx`.  
-- **App missing**: confirm Docker image `barque-app:prod` exists (`docker images`), and `application.yml` has correct `container-image`.  
-- **Auth issues**: verify users/groups in `/etc/shinyproxy/application.yml`; restart ShinyProxy.
-
----
+**Authentication Problems**
+- Review user configuration in `/etc/shinyproxy/application.yml`
+- Verify group assignments and permissions
+- Restart ShinyProxy after configuration changes
