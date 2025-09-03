@@ -1,0 +1,17 @@
+# Run deployment 
+
+Source credentials and run deployment
+
+```sh
+cd shinyproxy-openstack-terraform
+source def-langloiv-prod-openrc.sh
+terraform apply \                 
+  -var os_auth_url=$OS_AUTH_URL \
+  -var os_region=$OS_REGION_NAME \
+  -var os_project_name=$OS_PROJECT_NAME \
+  -var os_username=$OS_USERNAME \
+  -var os_password=$OS_PASSWORD \
+  -var os_domain=$OS_USER_DOMAIN_NAME
+```
+
+Don't forget to attached the floating ip to the nginx instance, otherwise no traffic will reach web services.
