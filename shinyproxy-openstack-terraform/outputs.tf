@@ -20,5 +20,5 @@ output "ssh_command" {
 
 output "shinyproxy_url" {
   description = "URL to access ShinyProxy application"
-  value       = "https://cloud.taq.info"
+  value       = "https://cloud.taqc.info"
 }

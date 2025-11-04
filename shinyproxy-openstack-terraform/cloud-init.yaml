@@ -28,7 +28,7 @@ write_files:
 
       server {
         listen 80;
-        server_name cloud.taq.info;
+        server_name cloud.taqc.info;
 
         proxy_read_timeout 3600s;
         proxy_send_timeout 3600s;
@@ -276,6 +276,6 @@ runcmd:
   - sudo ufw enable
   
   # SSL certificate
-  - sudo certbot --nginx -d cloud.taq.info -m steve.vissault@inrs.ca --agree-tos --no-eff-email -n
+  - sudo certbot --nginx -d cloud.taqc.info -m steve.vissault@inrs.ca --agree-tos --no-eff-email -n
   - systemctl restart nginx
   

@@ -27,7 +27,7 @@ The `shinyproxy-openstack-terraform` directory contains infrastructure-as-code f
 ### Service Configuration
 
 **Nginx Reverse Proxy** (`/etc/nginx/sites-available/shinyproxy`)
-- SSL termination for `cloud.taq.info`
+- SSL termination for `cloud.taqc.info`
 - Request forwarding to ShinyProxy on port 8080
 - 100MB client body size limit for file uploads
 
@@ -103,14 +103,14 @@ sudo ss -ltnp | grep -E ':80|:8080'
 ```
 
 ### Application Access
-1. Navigate to **https://cloud.taq.info**
+1. Navigate to **https://cloud.taqc.info**
 2. Authenticate using configured credentials (e.g., username: `steve`)
 3. Verify BARQUE application availability and functionality
 
 ## Expected Outcomes
 
 Upon successful deployment:
-- **ShinyProxy Portal**: Accessible at `https://cloud.taq.info`
+- **ShinyProxy Portal**: Accessible at `https://cloud.taqc.info`
 - **BARQUE Application**: Available through ShinyProxy interface
 - **SSL Security**: Automated certificate management via Let's Encrypt
 - **Container Management**: Docker-based application isolation and scaling

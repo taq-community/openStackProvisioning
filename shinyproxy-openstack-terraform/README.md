@@ -25,7 +25,7 @@ graph TB
         
         subgraph "Compute Instance (shinyproxy-1)"
             subgraph "VM - Ubuntu (p8-12gb)"
-                Nginx[Nginx<br/>Reverse Proxy<br/>SSL Termination<br/>cloud.taq.info<br/>100M body limit]
+                Nginx[Nginx<br/>Reverse Proxy<br/>SSL Termination<br/>cloud.taqc.info<br/>100M body limit]
                 ShinyProxy[ShinyProxy :8080<br/>• Users: tuan, julie, steve<br/>• Simple auth<br/>• Admin groups]
                 Docker[Docker Engine<br/>Port range: 20000+]
                 BarqueApp[BARQUE App Container<br/>barque-app:prod<br/>Shiny workflow app]
@@ -93,7 +93,7 @@ graph TB
 ### Automated Setup (Cloud-Init)
 - Package installation (Docker, Nginx, Certbot, Java)
 - User creation with Docker and sudo privileges
-- SSL certificate provisioning for `cloud.taq.info`
+- SSL certificate provisioning for `cloud.taqc.info`
 - Firewall configuration (UFW)
 - ShinyProxy installation and configuration
 - Docker image building from GitHub repository
@@ -104,7 +104,7 @@ graph TB
 - Group-based access control (`scientists`, `admin`)
 
 ### Application Configuration
-- Custom login page with TAQ Community branding
+- Custom login page with taqc Community branding
 - Container log management in `/var/log/shinyproxy/container-logs`
 - Port range allocation starting from 20000
 - 100MB client body size limit for file uploads
@@ -115,7 +115,7 @@ graph TB
 2. Initialize Terraform: `terraform init`
 3. Plan deployment: `terraform plan`
 4. Apply configuration: `terraform apply`
-5. Access ShinyProxy at: `https://cloud.taq.info`
+5. Access ShinyProxy at: `https://cloud.taqc.info`
 
 ## Outputs
 
