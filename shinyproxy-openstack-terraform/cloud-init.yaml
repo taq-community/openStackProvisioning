@@ -71,26 +71,43 @@ write_files:
         container-log-path: /var/log/shinyproxy/container-logs
         # Example: 'simple' authentication configuration
         users:
-          - name: ${shinyproxy_user1}
+          - name: tuan
             password: ${shinyproxy_password1}
-            groups: scientists
-          - name: ${shinyproxy_user2}
+            groups: [scientists, nemaska, avatittini]
+          - name: julie
             password: ${shinyproxy_password2}
-            groups: scientists
-          - name: ${shinyproxy_user3}
+            groups: [scientists, nemaska, avatittini]
+          - name: steve
             password: ${shinyproxy_password3}
-            groups: [ scientists, admin ]
-        docker:
+            groups: [ scientists, admin, nemaska, avatittini]
+          - name: metabar
+            password: ${shinyproxy_password4}
+            groups: [nemaska]
+          - name: avatittini-user
+            password: ${shinyproxy_password5}
+            groups: [avatittini]
           port-range-start: 20000
+        docker:
         specs:
           - id: barque
             display-name: BARQUE
             description: A Shiny application to run the BARQUE workflow.
             container-image: barque-app:prod
-            access-groups: scientists 
+            access-groups: scientists
+          - id: metabarmap-nemaska
+            display-name: Metabarcoding Nemaska
+            description: Metabarcoding results report for the cree nation of Nemaska
+            container-image: localhost:5000/metabarmap:v1.1.0-nemaska
+            access-groups: nemaska
+          - id: metabarmap-avatittini
+            display-name: Metabarcoding Avatittini
+            description: Metabarcoding results report for Avatittini project
+            container-image: localhost:5000/metabarmap:v1.2.0-avatittini
+            access-groups: avatittini
       logging:
         file:
           name: /var/log/shinyproxy/shinyproxy.log
+
 
   - path: /etc/shinyproxy/templates/login.html
     permissions: "0644"
