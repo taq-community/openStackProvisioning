@@ -59,8 +59,6 @@ resource "openstack_compute_instance_v2" "vm" {
   }
 
   user_data = templatefile("${path.module}/cloud-init.yaml", {
-    shinyproxy_password1 = var.shinyproxy_password1
-    shinyproxy_password2 = var.shinyproxy_password2
     shinyproxy_password3 = var.shinyproxy_password3
     shinyproxy_password4 = var.shinyproxy_password4
     domain               = var.domain

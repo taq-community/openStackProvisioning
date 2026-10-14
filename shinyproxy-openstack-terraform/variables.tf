@@ -60,18 +60,6 @@ variable "image_id" {
 }
 
 # ShinyProxy user credentials
-variable "shinyproxy_password1" {
-  type        = string
-  sensitive   = true
-  description = "First ShinyProxy user password"
-}
-
-variable "shinyproxy_password2" {
-  type        = string
-  sensitive   = true
-  description = "Second ShinyProxy user password"
-}
-
 variable "shinyproxy_password3" {
   type        = string
   sensitive   = true

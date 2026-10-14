@@ -70,12 +70,6 @@ write_files:
         hide-navbar: true
         container-log-path: /var/log/shinyproxy/container-logs
         users:
-          - name: tuan
-            password: ${shinyproxy_password1}
-            groups: [avatittini]
-          - name: julie
-            password: ${shinyproxy_password2}
-            groups: [avatittini]
           - name: steve
             password: ${shinyproxy_password3}
             groups: [admin, avatittini]
