@@ -1,126 +1,125 @@
 # ShinyProxy OpenStack Terraform Deployment
 
-This Terraform configuration deploys a ShinyProxy application server on OpenStack cloud infrastructure with automated SSL certificate provisioning and Docker-based application hosting.
+Terraform configuration that deploys a ShinyProxy server on the **new Arbutus cloud** (OpenStack), with automated SSL (Let's Encrypt) and Docker-based application hosting. Currently hosts the **Metabarcoding Avatittini** app (metabarMap).
 
 ## Architecture
 
 ```mermaid
 graph TB
-    subgraph "Internet"
-        Users[Users/Clients]
-    end
-    
-    subgraph "OpenStack Cloud"
-        subgraph "Networks"
-            PublicNet[Public Network<br/>Public-Network]
-            InternalNet[Internal Network<br/>def-langloiv-prod-network]
-        end
-        
-        FloatingIP[Floating IP<br/>Existing IP Address]
-        
-        subgraph "Security"
-            SG[Security Group<br/>sg-shinyproxy<br/>• SSH :22<br/>• HTTP :80<br/>• HTTPS :443]
-            KeyPair[SSH Key Pair<br/>id_compute_cloud]
-        end
-        
-        subgraph "Compute Instance (shinyproxy-1)"
-            subgraph "VM - Ubuntu (p8-12gb)"
-                Nginx[Nginx<br/>Reverse Proxy<br/>SSL Termination<br/>cloud.taqc.info<br/>100M body limit]
-                ShinyProxy[ShinyProxy :8080<br/>• Users: tuan, julie, steve<br/>• Simple auth<br/>• Admin groups]
-                Docker[Docker Engine<br/>Port range: 20000+]
-                BarqueApp[BARQUE App Container<br/>barque-app:prod<br/>Shiny workflow app]
-                Logs[Log Directory<br/>/var/log/shinyproxy]
-            end
-        end
-    end
-    
-    %% External connections
-    Users -->|HTTPS/HTTP/SSH| FloatingIP
-    PublicNet --> FloatingIP
-    FloatingIP -->|Port forwarding| Nginx
-    InternalNet --> VM
-    SG -->|Security rules| VM
-    KeyPair -->|SSH auth| VM
-    
-    %% Internal connections
-    Nginx -->|Proxy pass<br/>127.0.0.1:8080| ShinyProxy
-    ShinyProxy -->|Container mgmt| Docker
-    Docker -->|Run apps| BarqueApp
-    ShinyProxy -->|Write logs| Logs
-    
-    %% Styling
-    classDef networkClass fill:#e1f5fe
-    classDef securityClass fill:#fff3e0
-    classDef computeClass fill:#f3e5f5
-    classDef appClass fill:#e8f5e8
-    classDef storageClass fill:#fce4ec
-    
-    class PublicNet,InternalNet networkClass
-    class SG,KeyPair,FloatingIP securityClass
-    class Nginx,ShinyProxy,Docker computeClass
-    class BarqueApp appClass
-    class Logs storageClass
+    Users[Users/Clients] -->|HTTPS| FloatingIP
 
+    subgraph "Arbutus OpenStack Cloud"
+        FloatingIP[Floating IP<br/>pre-allocated]
+        SG[Security Group sg-shinyproxy<br/>SSH :22 restricted, HTTP :80, HTTPS :443]
+        KeyPair[Key Pair id_compute_cloud]
+
+        subgraph "VM shinyproxy-1 (Ubuntu 24.04, p8-12gb)"
+            Nginx[Nginx<br/>SSL termination, 100M body limit]
+            ShinyProxy[ShinyProxy :8080<br/>users: steve admin, avatittini-user]
+            Docker[Docker Engine<br/>port range 20000+]
+            App[metabarmap:v1.2.0-avatittini<br/>loaded locally]
+            Logs[/var/log/shinyproxy]
+        end
+    end
+
+    FloatingIP --> Nginx
+    SG -.->|rules| Nginx
+    KeyPair -.->|SSH auth| Nginx
+    Nginx -->|127.0.0.1:8080| ShinyProxy
+    ShinyProxy --> Docker --> App
+    ShinyProxy --> Logs
 ```
 
-## Infrastructure Components
+## What gets created
 
-### Network Configuration
-- **External Network**: `Public-Network` - Provides internet connectivity
-- **Internal Network**: `def-langloiv-prod-network` - Private network for VM placement
-- **Floating IP**: Pre-existing floating IP associated with the instance for external access
+- Security group `sg-shinyproxy` (SSH from `ssh_cidr` only, HTTP/HTTPS from anywhere)
+- Key pair from `public_key_path`
+- Instance `shinyproxy-1` (flavor `flavor_name`, image `image_id`) on the internal network
+- Association of a **pre-allocated** floating IP to the instance
 
-### Security
-- **Security Group**: `sg-shinyproxy` with rules for:
-  - SSH access (port 22) - restricted to specific CIDR
-  - HTTP access (port 80) - public access
-  - HTTPS access (port 443) - public access
+Cloud-init then installs Docker, Java, Nginx, Certbot and ShinyProxy 3.2.0, writes `application.yml` and the custom login page, enables UFW and obtains the certificate for `domain`.
 
-### Compute Resources
-- **Instance**: `shinyproxy-1`
-  - Flavor: `p8-12gb` (8 vCPUs, 12GB RAM)
-  - Image: Ubuntu (ID: 241de10b-becc-4d4d-a622-61695e5cb94f)
-  - Key Pair: `id_compute_cloud` for SSH access
+### ShinyProxy configuration
 
-### Application Stack
-- **Nginx**: Reverse proxy with SSL termination via Let's Encrypt
-- **ShinyProxy**: Application server (v3.2.0) running on port 8080
-- **Docker**: Container runtime for hosting Shiny applications
-- **BARQUE Application**: Custom Shiny app (`barque-app:prod`) for workflow execution
+- Authentication: `simple`, two users, both in group `avatittini`
+  - `steve` (also `admin`), password from `shinyproxy_password3`
+  - `avatittini-user`, password from `shinyproxy_password4`
+- App `metabarmap-avatittini` uses the image `metabarmap:v1.2.0-avatittini`, which is **not** built by cloud-init (see [After deployment](#after-deployment)).
+- Container logs in `/var/log/shinyproxy/container-logs`, container port range starting at 20000.
 
-## Deployment Features
+## Variables
 
-### Automated Setup (Cloud-Init)
-- Package installation (Docker, Nginx, Certbot, Java)
-- User creation with Docker and sudo privileges
-- SSL certificate provisioning for `cloud.taqc.info`
-- Firewall configuration (UFW)
-- ShinyProxy installation and configuration
-- Docker image building from GitHub repository
+Required (no default):
 
-### User Management
-- Three configured users: `tuan`, `julie`, `steve` (admin)
-- Simple authentication with password protection
-- Group-based access control (`scientists`, `admin`)
+| Variable | Description |
+|---|---|
+| `image_id` | Glance image ID (Ubuntu 24.04: `5a78426d-99b8-4014-b269-52a1c6d58f24`) |
+| `ssh_cidr` | CIDR allowed to SSH, e.g. `x.x.x.x/32` |
+| `external_network_name` | e.g. `Public-Network` |
+| `internal_network_name` | e.g. `def-langloiv-prod-network` |
+| `existing_floating_ip` | Floating IP already allocated to the project |
+| `certbot_email` | Let's Encrypt contact email |
+| `shinyproxy_password3` | Password of `steve` (sensitive) |
+| `shinyproxy_password4` | Password of `avatittini-user` (sensitive) |
+| `os_auth_url`, `os_region`, `os_project_name`, `os_username`, `os_password`, `os_domain` | Declared but unused: authentication comes from `OS_*` environment variables. Set them to `""`. |
 
-### Application Configuration
-- Custom login page with taqc Community branding
-- Container log management in `/var/log/shinyproxy/container-logs`
-- Port range allocation starting from 20000
-- 100MB client body size limit for file uploads
+Optional: `flavor_name` (`p8-12gb`), `server_name` (`shinyproxy-1`), `secgroup_name` (`sg-shinyproxy`), `keypair_name` / `public_key_path` (`id_compute_cloud`, use an **absolute** path since Terraform does not expand `~`), `domain` (`cloud.taqc.info`).
+
+Pass the passwords as environment variables instead of writing them to a file:
+
+```bash
+export TF_VAR_shinyproxy_password3='...'
+export TF_VAR_shinyproxy_password4='...'
+```
+
+## Prerequisites
+
+1. **Floating IP** allocated in the project: `openstack floating ip create Public-Network`
+2. **DNS**: `domain` must resolve to that floating IP *before* `apply`, otherwise Certbot fails.
+3. **Authentication on the new Arbutus cloud** uses SSO + MFA, which the Terraform provider does not support. Use an application credential instead:
+   ```bash
+   # log in with SSO (see the Arbutus Migration Guide for the RC file changes), then:
+   openstack application credential create terraform-shinyproxy -f json   # keep the secret, it is shown once
+   unset OS_USERNAME OS_PASSWORD OS_IDENTITY_PROVIDER OS_PROTOCOL OS_PROJECT_ID OS_PROJECT_NAME OS_PROJECT_DOMAIN_ID OS_PROJECT_DOMAIN_NAME OS_USER_DOMAIN_NAME
+   export OS_AUTH_URL=https://identity.arbutus.alliancecan.ca/
+   export OS_REGION_NAME=RegionOne
+   export OS_INTERFACE=public
+   export OS_AUTH_TYPE=v3applicationcredential
+   export OS_APPLICATION_CREDENTIAL_ID='...'
+   export OS_APPLICATION_CREDENTIAL_SECRET='...'
+   ```
+4. Terraform >= 1.5 and a local SSH public key.
 
 ## Usage
 
-1. Configure variables in `terraform.tfvars`
-2. Initialize Terraform: `terraform init`
-3. Plan deployment: `terraform plan`
-4. Apply configuration: `terraform apply`
-5. Access ShinyProxy at: `https://cloud.taqc.info`
+```bash
+cd shinyproxy-openstack-terraform
+terraform init
+terraform plan  -var-file=arbutus.tfvars -state=arbutus.tfstate
+terraform apply -var-file=arbutus.tfvars -state=arbutus.tfstate
+```
+
+Cloud-init takes a few minutes after `apply`. Check with `ssh sviss@<floating-ip> cloud-init status`, then open `https://cloud.taqc.info`.
+
+> The state file contains the ShinyProxy passwords in clear text. Keep it safe and use the same `-state` option for every command (`plan`, `apply`, `destroy`, `state list`).
+
+### Files that must never be committed
+
+`.gitignore` already excludes `*.tfstate`, `*.tfstate.*`, `*.tfvars`, `*.tfvars.*`, `tfplan`, `*.tfplan`, `*-openrc.sh` and `.terraform*`. Keep state, variables and credentials out of git.
+
+## After deployment
+
+The application image is not built on the VM. Build it locally from the metabarMap release (with the private CSV files included in `inst/extdata`), then load it on the VM:
+
+```bash
+docker save metabarmap:v1.2.0-avatittini | gzip | ssh sviss@<floating-ip> 'gunzip | docker load'
+```
+
+Until the image is loaded, the login works but launching the app fails.
 
 ## Outputs
 
-- **instance_name**: Name of the created instance
-- **instance_id**: OpenStack instance ID
-- **floating_ip**: Public IP address for access
-- **ssh_command**: Ready-to-use SSH connection command
-- **shinyproxy_url**: Direct URL to the ShinyProxy application
+- `instance_name`, `instance_id`
+- `floating_ip`: public IP of the instance
+- `ssh_command`: SSH command (private key derived from `public_key_path`)
+- `shinyproxy_url`: `https://<domain>`

@@ -15,7 +15,7 @@ output "floating_ip" {
 
 output "ssh_command" {
   description = "SSH command to connect to the instance"
-  value       = "ssh -i ${var.public_key_path} sviss@${data.openstack_networking_floatingip_v2.existing_floating_ip.address}"
+  value       = "ssh -i ${trimsuffix(var.public_key_path, ".pub")} sviss@${data.openstack_networking_floatingip_v2.existing_floating_ip.address}"
 }
 
 output "shinyproxy_url" {
