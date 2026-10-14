@@ -37,7 +37,7 @@ graph TB
 - Instance `shinyproxy-1` (flavor `flavor_name`, image `image_id`) on the internal network
 - Association of a **pre-allocated** floating IP to the instance
 
-Cloud-init then installs Docker, Java, Nginx, Certbot and ShinyProxy 3.2.0, writes `application.yml` and the custom login page, enables UFW and obtains the certificate for `domain`.
+Cloud-init then installs Docker, Java, Nginx, Certbot and ShinyProxy 3.2.4, writes `application.yml` and the custom login page, enables UFW and obtains the certificate for `domain`.
 
 ### ShinyProxy configuration
 

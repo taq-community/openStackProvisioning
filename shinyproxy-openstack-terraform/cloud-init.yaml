@@ -238,9 +238,9 @@ runcmd:
   # Ensure Docker is enabled and running
   - systemctl enable --now docker
 
-  # Download & install the ShinyProxy .deb (3.2.0 here; adjust as needed)
-  - wget -O /tmp/shinyproxy_3.2.0_amd64.deb https://www.shinyproxy.io/downloads/shinyproxy_3.2.0_amd64.deb
-  - apt-get install -y /tmp/shinyproxy_3.2.0_amd64.deb
+  # Download & install the ShinyProxy .deb (3.2.4: 3.2.0 is incompatible with Docker 29)
+  - wget -O /tmp/shinyproxy_3.2.4_amd64.deb https://www.shinyproxy.io/downloads/shinyproxy_3.2.4_amd64.deb
+  - apt-get install -y /tmp/shinyproxy_3.2.4_amd64.deb
   - rm -rf /etc/shinyproxy/application.yml
   - mv /etc/shinyproxy/application_deploy.yml /etc/shinyproxy/application.yml 
 
