@@ -1,10 +1,10 @@
 
 data "openstack_networking_network_v2" "external" {
-  name = "Public-Network"
+  name = var.external_network_name
 }
 
 data "openstack_networking_network_v2" "internal" {
-  name = "def-langloiv-prod-network"
+  name = var.internal_network_name
 }
 
 resource "openstack_networking_secgroup_v2" "sg" {
@@ -59,12 +59,10 @@ resource "openstack_compute_instance_v2" "vm" {
   }
 
   user_data = templatefile("${path.module}/cloud-init.yaml", {
-    shinyproxy_user1     = var.shinyproxy_user1
-    shinyproxy_password1 = var.shinyproxy_password1
-    shinyproxy_user2     = var.shinyproxy_user2
-    shinyproxy_password2 = var.shinyproxy_password2
-    shinyproxy_user3     = var.shinyproxy_user3
     shinyproxy_password3 = var.shinyproxy_password3
+    shinyproxy_password4 = var.shinyproxy_password4
+    domain               = var.domain
+    certbot_email        = var.certbot_email
     ssh_public_key       = file(var.public_key_path)
   })
 }

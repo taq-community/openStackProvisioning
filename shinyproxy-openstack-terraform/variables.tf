@@ -45,8 +45,7 @@ variable "secgroup_name" {
 
 # Restrict as needed (0.0.0.0/0 for tests)
 variable "ssh_cidr" {
-  type    = string
-  default = "184.162.122.126/32"
+  type = string
 }
 
 variable "flavor_name" {
@@ -57,45 +56,37 @@ variable "flavor_name" {
 
 variable "image_id" {
   type        = string
-  default     = "241de10b-becc-4d4d-a622-61695e5cb94f"
   description = "OpenStack image ID for the instance"
 }
 
 # ShinyProxy user credentials
-variable "shinyproxy_user1" {
-  type        = string
-  default     = "tuan"
-  description = "First ShinyProxy user name"
-}
-
-variable "shinyproxy_password1" {
-  type        = string
-  sensitive   = true
-  description = "First ShinyProxy user password"
-}
-
-variable "shinyproxy_user2" {
-  type        = string
-  default     = "julie"
-  description = "Second ShinyProxy user name"
-}
-
-variable "shinyproxy_password2" {
-  type        = string
-  sensitive   = true
-  description = "Second ShinyProxy user password"
-}
-
-variable "shinyproxy_user3" {
-  type        = string
-  default     = "steve"
-  description = "Third ShinyProxy user name (admin)"
-}
-
 variable "shinyproxy_password3" {
   type        = string
   sensitive   = true
   description = "Third ShinyProxy user password (admin)"
+}
+
+variable "shinyproxy_password4" {
+  type        = string
+  sensitive   = true
+  description = "avatittini-user password"
+}
+
+variable "external_network_name" {
+  type = string
+}
+
+variable "internal_network_name" {
+  type = string
+}
+
+variable "domain" {
+  type    = string
+  default = "cloud.taqc.info"
+}
+
+variable "certbot_email" {
+  type = string
 }
 
 variable "existing_floating_ip" {

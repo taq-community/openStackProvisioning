@@ -2,4 +2,8 @@ def-langloiv-prod-openrc.sh
 .terraform*
 *.tfstate.*
 *.tfstate
-terraform.tfvars
+*.tfvars
+*.tfvars.*
+tfplan
+*.tfplan
+*-openrc.sh
